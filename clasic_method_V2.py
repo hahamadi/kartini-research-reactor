@@ -179,15 +179,14 @@ def running_v(data, index=5):
         if len(col_df_val) == len(val):
             for j in range(len(col_df_val)):
                 df.loc[i,col_df_val[j]] = val[j]
-    print(df)
     return df
     
-df = running_v(data_excel_list, index=50)
+df = running_v(data_excel_list, index=len(data_excel_list))
 df.to_excel(os.path.join(excel_list,'Result_data_v.xlsx'), index=False)
 
 fig, axes = plt.subplots(1, 1, figsize=(18, 10), sharey=True)
 
-plot_range_with_errors(df, "diff", ax=axes[0], title="Metode diff")
+plot_range_with_errors(df, "diff", ax=axes, title="Metode diff")
 #plot_range_with_errors(df, "forward", ax=axes[1], title="Metode forward")
 #plot_range_with_errors(df, "central", ax=axes[2], title="Metode central")
 
