@@ -38,6 +38,11 @@ print(f"nama file pertama '{excel_files_short[0]}', nama file terakhir '{excel_f
         
 def load_one_file(path):
     df = pd.read_excel(path, sheet_name="Download Transaksi", header=1)
+    head, filename = os.path.split(path)
+    
+    date_part = filename.replace(".xlsx", "").split("_")[-3:]
+
+    date_str = "-".join(date_part)
     # parse time
     df[TIME_COL] = pd.to_datetime(df[TIME_COL], dayfirst=True, errors="coerce")
     df = df.dropna(subset=[TIME_COL]).sort_values(TIME_COL).reset_index(drop=True)
@@ -53,9 +58,23 @@ def load_one_file(path):
     df["Time_sec"] = (df["Time"] - df["Time"].iloc[0]).dt.total_seconds()
     df["dt_s"] = dt_s
     df["v_reg_diff"] = drod / dt_s
-    return df
+    
+    v_up = [i for i in df["v_reg_diff"] if i > 0]
+    v_down = [i for i in df["v_reg_diff"] if i < 0]
+    v_up_mean = np.mean(v_up)
+    v_down_mean = np.mean(v_down)
+    
+    v_up_std = np.std(v_up)/np.sqrt(len(v_up))
+    v_down_std = np.std(v_down)/np.sqrt(len(v_down))
+    return df, [date_str, v_up_mean, v_up_std, v_down_mean, v_down_std]
 
 def forward_central_diff(path):
+    head, filename = os.path.split(path)
+    
+    date_part = filename.replace(".xlsx", "").split("_")[-3:]
+
+    date_str = "-".join(date_part)
+    
     df = pd.read_excel(path, sheet_name="Download Transaksi", header=1)
     df[TIME_COL] = pd.to_datetime(df[TIME_COL], dayfirst=True, errors="coerce")
     df = df.dropna(subset=[TIME_COL]).sort_values(TIME_COL).reset_index(drop=True)
@@ -69,17 +88,37 @@ def forward_central_diff(path):
     v_forward[0] = 0
     v_forward[1:] = (x[1:] - x[:-1]) / (t[1:] - t[:-1])
     df["v_reg_forward"] = v_forward
+    v_up_forward = [i for i in df["v_reg_forward"] if i > 0]
+    v_down_forward = [i for i in df["v_reg_forward"] if i < 0]
+    v_up_mean_forward = np.mean(v_up_forward)
+    v_down_mean_forward = np.mean(v_down_forward)
+    
+    v_up_std_forward = np.std(v_up_forward)/np.sqrt(len(v_up_forward))
+    v_down_std_forward = np.std(v_down_forward)/np.sqrt(len(v_down_forward))
+    val_forward = [date_str, v_up_mean_forward, v_up_std_forward, 
+                   v_down_mean_forward, v_down_std_forward]
     
     v_central = np.empty_like(x, dtype=float)
     v_central[:] = 0
     v_central[1:-1] = (x[2:] - x[:-2]) / (t[2:] - t[:-2])
     df["v_reg_central"] = v_central
-    return df
+    
+    v_up_central = [i for i in df["v_reg_central"] if i > 0]
+    v_down_central = [i for i in df["v_reg_central"] if i < 0]
+    
+    v_up_mean_central = np.mean(v_up_central)
+    v_down_mean_central = np.mean(v_down_central)
+    
+    v_up_std_central = np.std(v_up_central)/np.sqrt(len(v_up_central))
+    v_down_std_central = np.std(v_down_central)/np.sqrt(len(v_down_central))
+    val_central = [date_str, v_up_mean_central, v_up_std_central, 
+                   v_down_mean_central, v_down_std_central]
+    return df, val_forward, val_central
 
-df1 = load_one_file(data_excel_list[0])
-df2 = forward_central_diff(data_excel_list[0])
+df1, val1 = load_one_file(data_excel_list[0])
+df2, val_forward, val_central = forward_central_diff(data_excel_list[0])
 
-print(len(df1["v_reg_diff"]), len(df2["v_reg_central"]))
+print(val1, val_forward)
 
 plt.figure()
 plt.plot(df1["Time_sec"], df1["Regulator Rod [%]"])
