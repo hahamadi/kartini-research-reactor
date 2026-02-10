@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
+import seaborn as sns
 
 current_folder = os.getcwd()
 excel_list = os.path.join(os.getcwd(),"data_operasi_reaktor")
@@ -64,8 +65,8 @@ def load_one_file(path):
     v_up_mean = np.mean(v_up)
     v_down_mean = np.mean(v_down)
     
-    v_up_std = np.std(v_up)/np.sqrt(len(v_up))
-    v_down_std = np.std(v_down)/np.sqrt(len(v_down))
+    v_up_std = np.std(v_up)#/np.sqrt(len(v_up))
+    v_down_std = np.std(v_down)#/np.sqrt(len(v_down))
     return df, [date_str, v_up_mean, v_up_std, v_down_mean, v_down_std]
 
 def forward_central_diff(path):
@@ -93,8 +94,8 @@ def forward_central_diff(path):
     v_up_mean_forward = np.mean(v_up_forward)
     v_down_mean_forward = np.mean(v_down_forward)
     
-    v_up_std_forward = np.std(v_up_forward)/np.sqrt(len(v_up_forward))
-    v_down_std_forward = np.std(v_down_forward)/np.sqrt(len(v_down_forward))
+    v_up_std_forward = np.std(v_up_forward)#/np.sqrt(len(v_up_forward))
+    v_down_std_forward = np.std(v_down_forward)#/np.sqrt(len(v_down_forward))
     val_forward = [date_str, v_up_mean_forward, v_up_std_forward, 
                    v_down_mean_forward, v_down_std_forward]
     
@@ -109,17 +110,90 @@ def forward_central_diff(path):
     v_up_mean_central = np.mean(v_up_central)
     v_down_mean_central = np.mean(v_down_central)
     
-    v_up_std_central = np.std(v_up_central)/np.sqrt(len(v_up_central))
-    v_down_std_central = np.std(v_down_central)/np.sqrt(len(v_down_central))
+    v_up_std_central = np.std(v_up_central)#/np.sqrt(len(v_up_central))
+    v_down_std_central = np.std(v_down_central)#/np.sqrt(len(v_down_central))
     val_central = [date_str, v_up_mean_central, v_up_std_central, 
                    v_down_mean_central, v_down_std_central]
     return df, val_forward, val_central
 
-df1, val1 = load_one_file(data_excel_list[0])
-df2, val_forward, val_central = forward_central_diff(data_excel_list[0])
+def plot_range_with_errors(df, method, ax=None, title=None):
+    """
+    method: "diff" / "forward" / "central"
+    Kolom yang dibutuhkan:
+      v_down_mean_{method}, v_down_std_{method},
+      v_up_mean_{method},   v_up_std_{method}
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(18, 10))
 
-print(val1, val_forward)
+    # pastikan date rapi
+    dff = df.copy()
+    dff["date"] = pd.to_datetime(dff["date"], dayfirst=True)
+    dff = dff.sort_values("date")
 
+    down_mean = dff[f"v_down_mean_{method}"].to_numpy(float)
+    up_mean   = dff[f"v_up_mean_{method}"].to_numpy(float)
+    down_std  = dff[f"v_down_std_{method}"].to_numpy(float)
+    up_std    = dff[f"v_up_std_{method}"].to_numpy(float)
+
+    x = np.arange(len(dff))
+    height = up_mean - down_mean  # tinggi batang
+    labels = dff["date"].dt.strftime("%d_%m_%Y").to_list()
+
+    # batang range (dari down_mean ke up_mean)
+    ax.bar(x, height, bottom=down_mean, width=0.7)
+
+    # errorbar bawah (di titik down_mean)
+    ax.errorbar(
+    x, down_mean, yerr=down_std,
+    fmt="none", capsize=5,
+    ecolor="black", elinewidth=1.2)
+
+    # errorbar atas (di titik up_mean)
+    ax.errorbar(
+        x, up_mean, yerr=up_std,
+        fmt="none", capsize=5,
+        ecolor="black", elinewidth=1.2
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Kecepatan (%/detik)")
+    ax.set_title(title or f"Variabilitas Kecepatan Regulator Rod ({method})")
+    ax.grid(True, axis="y", linestyle="--", alpha=0.4)
+
+    return ax
+
+def running_v(data, index=5):
+    col_df_val = ["date", "v_up_mean_diff", "v_up_std_diff", "v_down_mean_diff",
+                  "v_down_std_diff", "v_up_mean_forward","v_up_std_forward",
+                  "v_down_mean_forward", "v_down_std_forward", 
+                  "v_up_mean_central", "v_up_std_central", "v_down_mean_central", 
+                  "v_down_std_central"]
+    df = pd.DataFrame(columns=col_df_val)
+    for i in range(index):
+        df1, val1 = load_one_file(data[i])
+        df2, val_forward, val_central = forward_central_diff(data[i])
+        val = val1 + val_forward[1:] + val_central[1:]
+        if len(col_df_val) == len(val):
+            for j in range(len(col_df_val)):
+                df.loc[i,col_df_val[j]] = val[j]
+    print(df)
+    return df
+    
+df = running_v(data_excel_list, index=50)
+df.to_excel(os.path.join(excel_list,'Result_data_v.xlsx'), index=False)
+
+fig, axes = plt.subplots(1, 1, figsize=(18, 10), sharey=True)
+
+plot_range_with_errors(df, "diff", ax=axes[0], title="Metode diff")
+#plot_range_with_errors(df, "forward", ax=axes[1], title="Metode forward")
+#plot_range_with_errors(df, "central", ax=axes[2], title="Metode central")
+
+plt.tight_layout()
+plt.show()
+"""
 plt.figure()
 plt.plot(df1["Time_sec"], df1["Regulator Rod [%]"])
 plt.xlabel("Time (s)")
@@ -137,3 +211,4 @@ plt.ylabel("Rod speed (%/s)")
 plt.title("Regulating Rod Speed vs Time")
 plt.grid()
 plt.show()
+"""
