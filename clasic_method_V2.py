@@ -182,7 +182,8 @@ def running_v(data, index=5):
     return df
     
 df = running_v(data_excel_list, index=len(data_excel_list))
-df.to_excel(os.path.join(excel_list,'Result_data_v.xlsx'), index=False)
+folder_results = os.path.join(os.getcwd(),"data_operasi_reaktor2")
+df.to_excel(os.path.join(folder_results,'Result_data_v.xlsx'), index=False)
 
 fig, axes = plt.subplots(1, 1, figsize=(18, 10), sharey=True)
 
