@@ -31,7 +31,7 @@ pos_x_percent = 80 # units in %
 pos_x = (pos_x_percent/100) * H
 
 t_end = pos_x_percent/v_percent
-dt = 0.01        
+dt = 0.01      
  
 N = int(np.ceil(t_end / dt)) + 1
 times = np.linspace(0.0, t_end, N)

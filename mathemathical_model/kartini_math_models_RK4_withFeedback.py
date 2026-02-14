@@ -36,6 +36,32 @@ def rk4_temp(t, y, dt, T0, n, alfa, b):
     yn = y + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
     return yn
 
+def fung_neutron(t, nt, rho, beta, Lambda, sum_lambda_ci):
+    fun = ((rho - beta)*nt/Lambda) + sum_lambda_ci
+    return fun
+
+def rk4_neutron(t, y, dt, rho, beta, Lambda, sum_lambda_ci):
+    k1 = fung_neutron(t, y, rho, beta, Lambda, sum_lambda_ci)
+    k2 = fung_neutron(+ dt/2, y + (dt/2) * k1, rho, beta, Lambda, sum_lambda_ci)
+    k3 = fung_neutron(+ dt/2, y + (dt/2) * k2, rho, beta, Lambda, sum_lambda_ci)
+    k4 = fung_neutron(+ dt, y + dt * k3, rho, beta, Lambda, sum_lambda_ci)
+    
+    yn = y + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
+    return yn
+
+def fung_ci(t, ct, nt, beta_i, Lambda, lambda_i):
+    fun = ((beta_i*nt)/Lambda) - lambda_i*ct
+    return fun
+
+def rk4_ci(t, y, dt, nt, beta_i, Lambda, lambda_i):
+    k1 = fung_ci(t, y, nt, beta_i, Lambda, lambda_i)
+    k2 = fung_ci(+ dt/2, y + (dt/2) * k1, nt, beta_i, Lambda, lambda_i)
+    k3 = fung_ci(+ dt/2, y + (dt/2) * k2, nt, beta_i, Lambda, lambda_i)
+    k4 = fung_ci(+ dt, y + dt * k3, nt, beta_i, Lambda, lambda_i)
+    
+    yn = y + (dt/6)*(k1 + 2*k2 + 2*k3 + k4)
+    return yn
+
 df_fdn = pd.read_excel('fraction_delayed_neutrons_U235.xlsx', index_col=None)
 Lambda = 4.0e-5
 beta = np.sum(df_fdn["beta"].to_numpy())
@@ -54,7 +80,7 @@ pos_x_percent = 80 # units in %
 pos_x = (pos_x_percent/100) * H
 
 t_end = pos_x_percent/v_percent
-dt = 0.01        
+dt = 0.01       
  
 N = int(np.ceil(t_end / dt)) + 1
 times = np.linspace(0.0, t_end, N)
@@ -64,21 +90,21 @@ alpha_T_abs_per_K = 6e-5   # reaktivitas absolut per K (mulai dari 5e-5 s/d 2e-4
 a_K_per_s_at_n1 = 0.03     # K/s saat n=1 (pemanasan)
 b_1_per_s = 0.01           # 1/s (pendinginan), time constant ~100 s
 
-rho_t0 = rho_abs
-
 T = np.zeros(N)
 rho_net_abs = np.zeros(N)
 
 T[0] = T0
-rho_net_abs[0] = rho_abs  # karena T=T0 di awal
-
+#rho_net_abs[0] = rho_abs  # karena T=T0 di awal
 #times = np.arange(0,t_end,dt)
 pos_t = np.zeros_like(times)
 
 rho_t = np.zeros_like(times)
 rho_abs_t = np.zeros_like(times)
-rho_t0 = rho_abs
-rho_t[0] = rho_abs_t[0] = rho_abs
+
+rho_t[0] = 0.0 #rho_abs
+rho_abs_t[0] = beta * rho_t[0]
+rho_net_abs[0] = rho_abs_t[0]
+
 n_t = np.zeros_like(times)
 n_t[0] = 1.0
 
@@ -104,12 +130,12 @@ for i in np.arange(1,len(times),1):
     for ci in np.arange(0,len(group_mem), 1):
         sum_lambda_ci += c_t[i-1, ci]*df_fdn.loc[ci,"lambda"]
         
-    n_t[i] = n_t[i-1] + delT * euler_method_fung(times[i-1], n_t[i-1], rho_net_abs[i-1], beta, Lambda, sum_lambda_ci)
+    n_t[i] = rk4_neutron(times[i-1], n_t[i-1], delT, rho_net_abs[i], beta, Lambda, sum_lambda_ci)
     
     for ci2 in np.arange(0,len(group_mem), 1):
         beta_i = df_fdn.loc[ci2,"beta"]
         lam_i = df_fdn.loc[ci2,"lambda"]
-        c_t[i, ci2] = c_t[i-1, ci2] + delT * ((beta_i/Lambda) * n_t[i-1] - lam_i * c_t[i-1, ci2])
+        c_t[i, ci2] = rk4_ci(times[i-1], c_t[i-1, ci2], dt, n_t[i-1], beta_i, Lambda, lam_i)
         
 df_out = pd.DataFrame({
     "time_s" : times,

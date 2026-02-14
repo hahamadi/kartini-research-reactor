@@ -4,6 +4,7 @@ import numpy as np
 
 df_exp = pd.read_excel("hasil_simulasi_kartini_explicitEuler.xlsx")
 df_imp = pd.read_excel("hasil_simulasi_kartini_implicitEuler.xlsx")
+df_rk4 = pd.read_excel("hasil_simulasi_kartini_RK4.xlsx")
 
 df_compare = pd.DataFrame()
 col = ["neutron_density_n","rod_position_m"]
@@ -40,9 +41,10 @@ print("Mean Relative Error (%):", mean_rel_error)
 plt.figure()
 plt.plot(df_exp["time_s"], df_exp["neutron_density_n"], label="Explicit Euler")
 plt.plot(df_imp["time_s"], df_imp["neutron_density_n"], label="Implicit Euler")
+plt.plot(df_rk4["time_s"], df_rk4["neutron_density_n"], label="Runge-Kutta 4")
 plt.xlabel("Time (s)")
 plt.ylabel("Neutron Density n(t)")
-plt.title("Explicit vs Implicit Euler")
+plt.title("Explicit, Implicit Euler and RK4")
 plt.legend()
 plt.grid()
 plt.show()
