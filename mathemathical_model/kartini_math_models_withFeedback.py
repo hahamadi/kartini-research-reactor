@@ -25,9 +25,9 @@ v_percent = 0.666242 # units (%/s)
 v_rod = (v_percent/100) * H # units m/s
 
 #beta = 0.007
-rho_abs = rho_max * beta
+rho_abs = rho_max * beta          # absolut
 
-pos_x_percent = 20 # units in %
+pos_x_percent = 80 # units in %
 pos_x = (pos_x_percent/100) * H
 
 t_end = pos_x_percent/v_percent
@@ -36,14 +36,26 @@ dt = 0.01
 N = int(np.ceil(t_end / dt)) + 1
 times = np.linspace(0.0, t_end, N)
 
-rho_t0 = 0.0
+T0 = 300 #initial temperature (K)
+alpha_T_abs_per_K = 6e-5   # reaktivitas absolut per K (mulai dari 5e-5 s/d 2e-4)
+a_K_per_s_at_n1 = 0.03     # K/s saat n=1 (pemanasan)
+b_1_per_s = 0.01           # 1/s (pendinginan), time constant ~100 s
+
+rho_t0 = rho_abs
+
+T = np.zeros(N)
+rho_net_abs = np.zeros(N)
+
+T[0] = T0
+rho_net_abs[0] = rho_abs  # karena T=T0 di awal
 
 #times = np.arange(0,t_end,dt)
 pos_t = np.zeros_like(times)
 
 rho_t = np.zeros_like(times)
 rho_abs_t = np.zeros_like(times)
-rho_t[0] = rho_abs_t[0] = rho_t0
+rho_t0 = rho_abs
+rho_t[0] = rho_abs_t[0] = rho_abs
 n_t = np.zeros_like(times)
 n_t[0] = 1.0
 
@@ -58,20 +70,38 @@ for i in np.arange(1,len(times),1):
     pos_t[i] = pos_t[i-1] + delT * v_rod
     #print(pos_t[i])
     rho_t[i] = rho_t[i-1] + delT * fung_rho_sin2(times[i-1], rho_t[i-1], pos_t[i-1], v_rod, rho_max, H)
+    
     rho_abs_t[i] = rho_t[i] * beta
+    
+    dTdt = a_K_per_s_at_n1 * n_t[i-1] - b_1_per_s * (T[i-1] - T0)
+    T[i] = T[i-1] + delT * dTdt
+
+    
+    rho_net_abs[i] = rho_abs_t[i] - alpha_T_abs_per_K * (T[i] - T0)
+    
     sum_lambda_ci = 0
     for ci in np.arange(0,len(group_mem), 1):
         sum_lambda_ci += c_t[i-1, ci]*df_fdn.loc[ci,"lambda"]
         
-    n_t[i] = n_t[i-1] + delT * euler_method_fung(times[i], n_t[i], rho_abs_t[i], beta, Lambda, sum_lambda_ci)
+    n_t[i] = n_t[i-1] + delT * euler_method_fung(times[i-1], n_t[i-1], rho_net_abs[i-1], beta, Lambda, sum_lambda_ci)
     
     for ci2 in np.arange(0,len(group_mem), 1):
         beta_i = df_fdn.loc[ci2,"beta"]
         lam_i = df_fdn.loc[ci2,"lambda"]
-        c_t[i, ci2] = c_t[i-1, ci2] + delT * ((beta_i/lam_i) * n_t[i-1] - lam_i*(c_t[i-1, ci2]*df_fdn.loc[ci2,"lambda"]))
+        c_t[i, ci2] = c_t[i-1, ci2] + delT * ((beta_i/Lambda) * n_t[i-1] - lam_i * c_t[i-1, ci2])
         
-        
-    
+df_out = pd.DataFrame({
+    "time_s" : times,
+    "rod_position_m" : pos_t,
+    "rod_position_%" : 100 * pos_t / H,
+    "rho_dollar" : rho_t,
+    "rho_abs" : rho_abs_t,
+    "rho_net_abs" : rho_net_abs,
+    "neutron_density_n" : n_t,
+    "temperature_K" : T
+    })
+
+df_out.to_excel("hasil_simulasi_kartini_explicitEuler.xlsx", index=False)
 print(n_t)
 plt.figure()
 plt.plot(times, rho_t)
@@ -87,4 +117,4 @@ plt.xlabel("Time (s)")
 plt.ylabel("dollar")
 plt.title("Regulating Rod Position vs Time")
 plt.grid()
-plt.show()  
+plt.show()
