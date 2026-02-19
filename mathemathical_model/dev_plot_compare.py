@@ -5,6 +5,7 @@ import numpy as np
 df_exp = pd.read_excel("hasil_simulasi_kartini_explicitEuler.xlsx")
 df_imp = pd.read_excel("hasil_simulasi_kartini_implicitEuler.xlsx")
 df_rk4 = pd.read_excel("hasil_simulasi_kartini_RK4.xlsx")
+df_etd1 = pd.read_excel("hasil_simulasi_kartini_ETD1.xlsx")
 
 df_compare = pd.DataFrame()
 col = ["neutron_density_n","rod_position_m"]
@@ -42,6 +43,7 @@ plt.figure()
 plt.plot(df_exp["time_s"], df_exp["neutron_density_n"], label="Explicit Euler")
 plt.plot(df_imp["time_s"], df_imp["neutron_density_n"], label="Implicit Euler")
 plt.plot(df_rk4["time_s"], df_rk4["neutron_density_n"], label="Runge-Kutta 4")
+plt.plot(df_etd1["time_s"], df_etd1["neutron_density_n"], label="ETD orde 1")
 plt.xlabel("Time (s)")
 plt.ylabel("Neutron Density n(t)")
 plt.title("Explicit, Implicit Euler and RK4")
@@ -49,6 +51,7 @@ plt.legend()
 plt.grid()
 plt.show()
 
+"""
 plt.figure()
 plt.plot(df_exp["time_s"], df_exp["rod_position_m"], label="Explicit Euler")
 plt.plot(df_imp["time_s"], df_imp["rod_position_m"], label="Implicit Euler")
@@ -66,3 +69,4 @@ plt.ylabel("Relative Error (%)")
 plt.title("Relative Error: Explicit vs Implicit")
 plt.grid()
 plt.show()
+"""
