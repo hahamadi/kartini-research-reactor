@@ -21,7 +21,7 @@ group_mem = df_fdn["beta"].to_numpy()
 H = 0.38 #units (meter)
 rho_max = 1.95 # units dollar $
 
-v_percent = 0.666242 # units (%/s)
+v_percent = 0.738 # units (%/s)
 v_rod = (v_percent/100) * H # units m/s
 
 #beta = 0.007
@@ -31,7 +31,7 @@ pos_x_percent = 80 # units in %
 pos_x = (pos_x_percent/100) * H
 
 t_end = pos_x_percent/v_percent
-dt = 0.05        
+dt = 0.01        
  
 N = int(np.ceil(t_end / dt)) + 1
 times = np.linspace(0.0, t_end, N)
@@ -94,15 +94,17 @@ print(n_t)
 plt.figure()
 plt.plot(times, rho_t)
 plt.xlabel("Time (s)")
-plt.ylabel("dollar")
-plt.title("Regulating Rod Position vs Time")
+plt.ylabel("Reactivity ($)")
+plt.title("Reactivity vs Time")
 plt.grid()
+plt.savefig("reactivityVsTime_explicitEuler.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure()
 plt.plot(times, n_t)
 plt.xlabel("Time (s)")
-plt.ylabel("dollar")
-plt.title("Regulating Rod Position vs Time")
+plt.ylabel("n(t)")
+plt.title("Number of neutrons vs Time")
 plt.grid()
+plt.savefig("neutronVsTime_explicitEuler.png", dpi=300, bbox_inches='tight')
 plt.show()  

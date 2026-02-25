@@ -7,6 +7,9 @@ current_folder = os.getcwd()
 excel_list = os.path.join(os.getcwd(),"data_operasi_reaktor2")
 filename = 'Result_data_v.xlsx'
 
+method = "diff"  # "diff" / "forward" / "central"
+
+
 df = pd.read_excel(os.path.join(excel_list,filename))
 
 # pastikan kolom date dalam format datetime
@@ -15,8 +18,8 @@ df["date"] = pd.to_datetime(df["date"], dayfirst=True)
 plt.figure(figsize=(12,6))
 
 plt.plot(df["date"], df["v_up_mean_diff"], label="Diff Method", linewidth=1.5)
-plt.plot(df["date"], df["v_up_mean_forward"], label="Forward Method", linewidth=1.5)
-plt.plot(df["date"], df["v_up_mean_central"], label="Central Method", linewidth=1.5)
+plt.plot(df["date"], df["v_down_mean_diff"], label="Diff Method", linewidth=1.5)
+#plt.plot(df["date"], df["v_up_mean_central"], label="Central Method", linewidth=1.5)
 
 plt.xlabel("Date")
 plt.ylabel("Control Rod Speed (cm/s)")
