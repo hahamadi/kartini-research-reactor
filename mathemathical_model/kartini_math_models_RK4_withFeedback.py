@@ -70,7 +70,7 @@ group_mem = df_fdn["beta"].to_numpy()
 H = 0.38 #units (meter)
 rho_max = 1.95 # units dollar $
 
-v_percent = 0.666242 # units (%/s)
+v_percent = 0.738 # units (%/s)
 v_rod = (v_percent/100) * H # units m/s
 
 #beta = 0.007
@@ -80,7 +80,7 @@ pos_x_percent = 80 # units in %
 pos_x = (pos_x_percent/100) * H
 
 t_end = pos_x_percent/v_percent
-dt = 0.01       
+dt = 0.05       
  
 N = int(np.ceil(t_end / dt)) + 1
 times = np.linspace(0.0, t_end, N)
@@ -148,20 +148,43 @@ df_out = pd.DataFrame({
     "temperature_K" : T
     })
 
-df_out.to_excel("hasil_simulasi_kartini_RK4.xlsx", index=False)
-print(n_t)
+df_out.to_excel(f"hasil_simulasi_kartini_RK4_h{dt}.xlsx", index=False)
+
 plt.figure()
 plt.plot(times, rho_t)
 plt.xlabel("Time (s)")
-plt.ylabel("dollar")
-plt.title("Regulating Rod Position vs Time")
+plt.ylabel("Reactivity ($)")
+plt.title("Reactivity vs Time")
 plt.grid()
+plt.savefig(f"reactivityVsTime_RK4_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
 plt.show()
+plt.figure()
+
+plt.plot(times, T)
+plt.xlabel("Time (s)")
+plt.ylabel("Fuel temperature T (K)")
+plt.title("Temperature vs Time")
+plt.grid(True)
+plt.savefig(f"TemperatureVsTime_RK4_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
+plt.show()
+
+plt.figure()
+plt.plot(times, rho_abs_t, label="rho_rod_abs")
+plt.plot(times, rho_net_abs, label="rho_net_abs (with feedback)")
+plt.xlabel("Time (s)")
+plt.ylabel("Reactivity (absolute)")
+plt.title("Rod vs Net Reactivity")
+plt.grid(True)
+plt.legend()
+plt.savefig(f"ReactivityAllVsTime_RK4_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
+plt.show()
+
 
 plt.figure()
 plt.plot(times, n_t)
 plt.xlabel("Time (s)")
-plt.ylabel("dollar")
-plt.title("Regulating Rod Position vs Time")
+plt.ylabel("n(t)")
+plt.title("Number of neutrons vs Time")
 plt.grid()
+plt.savefig(f"neutronVsTime_RK4_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
 plt.show()

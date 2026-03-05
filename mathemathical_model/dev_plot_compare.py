@@ -2,10 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-df_exp = pd.read_excel("hasil_simulasi_kartini_explicitEuler.xlsx")
-df_imp = pd.read_excel("hasil_simulasi_kartini_implicitEuler.xlsx")
-df_rk4 = pd.read_excel("hasil_simulasi_kartini_RK4.xlsx")
-df_etd1 = pd.read_excel("hasil_simulasi_kartini_ETD1.xlsx")
+df_exp = pd.read_excel("hasil_simulasi_kartini_explicitEuler_h0.05.xlsx")
+df_imp = pd.read_excel("hasil_simulasi_kartini_implicitEuler_h0.05.xlsx")
+df_rk4 = pd.read_excel("hasil_simulasi_kartini_RK4_h0.05.xlsx")
+df_etd1 = pd.read_excel("hasil_simulasi_kartini_ETD1_h0.05.xlsx")
 
 df_compare = pd.DataFrame()
 col = ["neutron_density_n","rod_position_m"]
@@ -46,9 +46,10 @@ plt.plot(df_rk4["time_s"], df_rk4["neutron_density_n"], label="Runge-Kutta 4")
 plt.plot(df_etd1["time_s"], df_etd1["neutron_density_n"], label="ETD orde 1")
 plt.xlabel("Time (s)")
 plt.ylabel("Neutron Density n(t)")
-plt.title("Explicit, Implicit Euler and RK4")
+plt.title("Explicit, Implicit Euler, RK4 and ETD1")
 plt.legend()
 plt.grid()
+plt.savefig("all_neutron_value_compare_h0.05.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 """

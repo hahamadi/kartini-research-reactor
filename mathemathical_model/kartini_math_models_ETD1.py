@@ -59,7 +59,7 @@ rho_abs = rho_max * beta          # absolut
 pos_x_percent = 80 # units in %
 pos_x = (pos_x_percent/100) * H
 
-t_end = 1000#pos_x_percent/v_percent
+t_end = pos_x_percent/v_percent
 dt = 0.05      
  
 N = int(np.ceil(t_end / dt)) + 1

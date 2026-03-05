@@ -75,7 +75,7 @@ target_percent = 80.0
 x_target = (target_percent / 100.0) * H
 t_end = target_percent / v_percent  # seconds to reach target at v_percent (%/s)
 
-dt = 0.01
+dt = 0.05
 N = int(np.ceil(t_end / dt)) + 1
 t = np.linspace(0.0, t_end, N)
 
@@ -142,17 +142,10 @@ df_out = pd.DataFrame({
     "temperature_K" : T
     })
 
-df_out.to_excel("hasil_simulasi_kartini_implicitEuler.xlsx", index=False)
+df_out.to_excel(f"hasil_simulasi_kartini_implicitEuler_h{dt}.xlsx", index=False)
 # ===========================
 # PLOTS
 # ===========================
-plt.figure()
-plt.plot(t, 100*x/H)
-plt.xlabel("Time (s)")
-plt.ylabel("Rod position (%)")
-plt.title("Rod Position vs Time")
-plt.grid(True)
-plt.show()
 
 plt.figure()
 plt.plot(t, rho_d)
@@ -160,6 +153,7 @@ plt.xlabel("Time (s)")
 plt.ylabel("Reactivity ($)")
 plt.title("Reactivity vs Time (sin^2 worth, integrated)")
 plt.grid(True)
+#plt.savefig(f"reactivityVsTime_implicitEuler_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure()
@@ -168,6 +162,7 @@ plt.xlabel("Time (s)")
 plt.ylabel("n(t) (relative neutron density)")
 plt.title("Neutron Density vs Time (6-group, Implicit Euler)")
 plt.grid(True)
+#plt.savefig(f"neutronVsTime_implicitEuler_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure()
@@ -176,6 +171,7 @@ plt.xlabel("Time (s)")
 plt.ylabel("Fuel temperature T (K)")
 plt.title("Temperature vs Time")
 plt.grid(True)
+#plt.savefig(f"TemperatureVsTime_implicitEuler_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure()
@@ -186,6 +182,7 @@ plt.ylabel("Reactivity (absolute)")
 plt.title("Rod vs Net Reactivity")
 plt.grid(True)
 plt.legend()
+#plt.savefig(f"ReactivityAllVsTime_implicitEuler_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 print("beta_total =", beta_total)

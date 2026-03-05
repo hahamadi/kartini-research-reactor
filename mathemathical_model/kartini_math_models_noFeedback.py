@@ -90,6 +90,8 @@ df_out = pd.DataFrame({
     })
 
 df_out.to_excel("hasil_simulasi_kartini_explicitEuler_origin.xlsx", index=False)
+n_t1 = [np.log(y) for y in n_t if y != np.nan]
+ 
 print(n_t)
 plt.figure()
 plt.plot(times, rho_t)
@@ -97,14 +99,14 @@ plt.xlabel("Time (s)")
 plt.ylabel("Reactivity ($)")
 plt.title("Reactivity vs Time")
 plt.grid()
-plt.savefig("reactivityVsTime_explicitEuler.png", dpi=300, bbox_inches='tight')
+#plt.savefig("reactivityVsTime_explicitEuler.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure()
-plt.plot(times, n_t)
+plt.plot(times, n_t1)
 plt.xlabel("Time (s)")
 plt.ylabel("n(t)")
 plt.title("Number of neutrons vs Time")
 plt.grid()
-plt.savefig("neutronVsTime_explicitEuler.png", dpi=300, bbox_inches='tight')
+#plt.savefig("neutronVsTime_explicitEuler.png", dpi=300, bbox_inches='tight')
 plt.show()  

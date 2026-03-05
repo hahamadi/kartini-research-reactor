@@ -21,17 +21,17 @@ group_mem = df_fdn["beta"].to_numpy()
 H = 0.38 #units (meter)
 rho_max = 1.95 # units dollar $
 
-v_percent = 0.666242 # units (%/s)
+v_percent = 0.738 # units (%/s)
 v_rod = (v_percent/100) * H # units m/s
 
 #beta = 0.007
-rho_abs = rho_max * beta          # absolut
+rho_abs = 0          # absolut
 
 pos_x_percent = 80 # units in %
 pos_x = (pos_x_percent/100) * H
 
 t_end = pos_x_percent/v_percent
-dt = 0.01      
+dt = 0.05      
  
 N = int(np.ceil(t_end / dt)) + 1
 times = np.linspace(0.0, t_end, N)
@@ -67,7 +67,10 @@ for ci2 in range(len(group_mem)):
 
 for i in np.arange(1,len(times),1):
     delT = times[i]-times[i-1]
-    pos_t[i] = pos_t[i-1] + delT * v_rod
+    #pos_t[i] = pos_t[i-1] + delT * v_rod
+    pos_t[i] = min(H, pos_t[i-1] + delT * v_rod)
+    if pos_t[i-1] > pos_x:
+        pos_t[i] = pos_x
     #print(pos_t[i])
     rho_t[i] = rho_t[i-1] + delT * fung_rho_sin2(times[i-1], rho_t[i-1], pos_t[i-1], v_rod, rho_max, H)
     
@@ -101,20 +104,53 @@ df_out = pd.DataFrame({
     "temperature_K" : T
     })
 
-df_out.to_excel("hasil_simulasi_kartini_explicitEuler.xlsx", index=False)
-print(n_t)
+df_out.to_excel("hasil_simulasi_kartini_explicitEuler_h0.05.xlsx", index=False)
+
 plt.figure()
 plt.plot(times, rho_t)
 plt.xlabel("Time (s)")
-plt.ylabel("dollar")
-plt.title("Regulating Rod Position vs Time")
+plt.ylabel("Reactivity ($)")
+plt.title("Reactivity vs Time")
 plt.grid()
+plt.savefig("reactivityVsTime_explicitEuler_feedback_h0.05.png", dpi=300, bbox_inches='tight')
+plt.show()
+plt.figure()
+
+plt.plot(times, T)
+plt.xlabel("Time (s)")
+plt.ylabel("Fuel temperature T (K)")
+plt.title("Temperature vs Time")
+plt.grid(True)
+#plt.savefig("TemperatureVsTime_explicitEuler_feedback.png", dpi=300, bbox_inches='tight')
+plt.show()
+
+plt.figure()
+plt.plot(times, rho_abs_t, label="rho_rod_abs")
+plt.plot(times, rho_net_abs, label="rho_net_abs (with feedback)")
+plt.xlabel("Time (s)")
+plt.ylabel("Reactivity (absolute)")
+plt.title("Rod vs Net Reactivity")
+plt.grid(True)
+plt.legend()
+plt.savefig("ReactivityAllVsTime_explicitEuler_feedback_h0.05.png", dpi=300, bbox_inches='tight')
+plt.show()
+
+plt.figure()
+#plt.plot(times, rho_t, label="rho_rod_abs")
+plt.plot(times[1:], rho_net_abs[1:], label="rho_net_abs (with feedback)")
+plt.xlabel("Time (s)")
+plt.ylabel("Reactivity (absolute)")
+plt.title("Rod vs Net Reactivity")
+plt.grid(True)
+plt.legend()
+#plt.savefig("ReactivityAllVsTime_explicitEuler_feedback.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 plt.figure()
 plt.plot(times, n_t)
 plt.xlabel("Time (s)")
-plt.ylabel("dollar")
-plt.title("Regulating Rod Position vs Time")
+plt.ylabel("n(t)")
+plt.title("Number of neutrons vs Time")
 plt.grid()
+plt.savefig("neutronVsTime_explicitEuler_feedback_h0.05.png", dpi=300, bbox_inches='tight')
 plt.show()
