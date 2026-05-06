@@ -11,6 +11,14 @@ def fung_rho_sin2(t, rho, x, v, rho_max, H):
 def euler_method_fung(t,n, rho_abs_t, beta, lamb, sum_lambda_ci):
     fun = ((rho_abs_t - beta) * n/lamb) + sum_lambda_ci
     return fun
+
+def drho_dx_polynomial(x):
+    drho = drho = -129.16*5*x**4 + 279.95*4*x**3 - 215.04*3*x**2 + 58.294*2*x + 1.3702
+    return drho
+
+def drho_dt_polynomial(t,x,v):
+    drho = drho_dx_polynomial(x) * v
+    return drho
     
 
 df_fdn = pd.read_excel('fraction_delayed_neutrons_U235.xlsx', index_col=None)
@@ -21,7 +29,7 @@ group_mem = df_fdn["beta"].to_numpy()
 H = 0.38 #units (meter)
 rho_max = 1.95 # units dollar $
 
-v_percent = 0.738 # units (%/s)
+v_percent = 1.6579 # units (%/s)
 v_rod = (v_percent/100) * H # units m/s
 
 #beta = 0.007
@@ -64,7 +72,9 @@ for i in np.arange(1,len(times),1):
     delT = times[i]-times[i-1]
     pos_t[i] = pos_t[i-1] + delT * v_rod
     #print(pos_t[i])
-    rho_t[i] = rho_t[i-1] + delT * fung_rho_sin2(times[i-1], rho_t[i-1], pos_t[i-1], v_rod, rho_max, H)
+    rho_t[i] = rho_t[i-1] + delT * drho_dt_polynomial(times[i-1], pos_t[i-1], v_rod)
+    
+    #rho_t[i] = rho_t[i-1] + delT * fung_rho_sin2(times[i-1], rho_t[i-1], pos_t[i-1], v_rod, rho_max, H)
     
     rho_abs_t[i] = rho_t[i] * beta
     
@@ -89,7 +99,7 @@ df_out = pd.DataFrame({
     "neutron_density_n" : n_t
     })
 
-df_out.to_excel("hasil_simulasi_kartini_explicitEuler_origin.xlsx", index=False)
+#df_out.to_excel("hasil_simulasi_kartini_explicitEuler_origin.xlsx", index=False)
 n_t1 = [np.log(y) for y in n_t if y != np.nan]
  
 print(n_t)

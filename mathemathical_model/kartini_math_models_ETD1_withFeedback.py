@@ -50,7 +50,7 @@ group_mem = df_fdn["beta"].to_numpy()
 H = 0.38 #units (meter)
 rho_max = 1.95 # units dollar $
 
-v_percent = 0.738 # units (%/s)
+v_percent = 1.49 # units (%/s)
 v_rod = (v_percent/100) * H # units m/s
 
 #beta = 0.007
@@ -103,9 +103,9 @@ for i in range(1, len(times)):
     delT = times[i] - times[i-1]
     pos_t[i] = pos_t[i-1] + delT * v_rod
     #pos_t[i] = min(H, pos_t[i-1] + delT * v_rod)
-    #if pos_t[i-1] > pos_x:
-    #    pos_t[i] = pos_x
-        #v_rod = 0
+    if pos_t[i-1] > pos_x:
+        pos_t[i] = pos_x
+        v_rod = 0
 
     # rho in $ (no linear part -> Euler is ok)
     Cworth = (np.pi * rho_max) / (2*H)
@@ -148,7 +148,7 @@ df_out = pd.DataFrame({
     "temperature_K" : T
     })
 
-df_out.to_excel(f"hasil_simulasi_kartini_ETD1_h{dt}.xlsx", index=False)
+#df_out.to_excel(f"hasil_simulasi_kartini_ETD1_h{dt}.xlsx", index=False)
 
 plt.figure()
 plt.plot(times, rho_t)

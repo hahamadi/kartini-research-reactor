@@ -4,8 +4,8 @@ import pandas as pd
 
 def rho_update_etd1(rho_n, t_n, dt, x_n, v, rho_max, H):
     C = (np.pi * rho_max) / (2*H)
-    g = C * v * (np.sin(np.pi * x_n / H)**2)
-    return rho_n + dt * g
+    g = C * v * (np.sin(np.pi * x_n / H)**2) - (1.0*rho_n)
+    return g
 
 def phi1(z):
     if abs(z) < 1e-8:
@@ -50,31 +50,22 @@ group_mem = df_fdn["beta"].to_numpy()
 H = 0.38 #units (meter)
 rho_max = 1.95 # units dollar $
 
-v_percent = 0.738 # units (%/s)
+v_percent = 1.49 # units (%/s)
 v_rod = (v_percent/100) * H # units m/s
 
 #beta = 0.007
 rho_abs = rho_max * beta          # absolut
 
-pos_x_percent = 80 # units in %
+pos_x_percent = 50 # units in %
 pos_x = (pos_x_percent/100) * H
 
-t_end = pos_x_percent/v_percent
-dt = 0.05      
+t_end = 50#pos_x_percent/v_percent
+#print(t_end)
+dt = 0.01      
  
 N = int(np.ceil(t_end / dt)) + 1
 times = np.linspace(0.0, t_end, N)
 
-T0 = 300 #initial temperature (K)
-alpha_T_abs_per_K = 4e-4   # reaktivitas absolut per K (mulai dari 5e-5 s/d 2e-4)
-a_K_per_s_at_n1 = 0.03     # K/s saat n=1 (pemanasan)
-b_1_per_s = 0.01           # 1/s (pendinginan), time constant ~100 s
-
-T = np.zeros(N)
-rho_net_abs = np.zeros(N)
-
-T[0] = T0
-#rho_net_abs[0] = rho_abs  # karena T=T0 di awal
 #times = np.arange(0,t_end,dt)
 pos_t = np.zeros_like(times)
 
@@ -83,7 +74,7 @@ rho_abs_t = np.zeros_like(times)
 
 rho_t[0] = 0.0 #rho_abs
 rho_abs_t[0] = beta * rho_t[0]
-rho_net_abs[0] = rho_abs_t[0]
+#rho_net_abs[0] = rho_abs_t[0]
 
 n_t = np.zeros_like(times)
 n_t[0] = 1.0
@@ -103,29 +94,22 @@ for i in range(1, len(times)):
     delT = times[i] - times[i-1]
     pos_t[i] = pos_t[i-1] + delT * v_rod
     #pos_t[i] = min(H, pos_t[i-1] + delT * v_rod)
-    #if pos_t[i-1] > pos_x:
-    #    pos_t[i] = pos_x
-        #v_rod = 0
+    if pos_t[i-1] >= pos_x:
+        pos_t[i] = pos_x
+        v_rod = 0
 
     # rho in $ (no linear part -> Euler is ok)
+    ch = np.exp(1.0*delT)
     Cworth = (np.pi * rho_max) / (2*H)
     g_rho = Cworth * v_rod * (np.sin(np.pi * pos_t[i-1] / H)**2)
-    rho_t[i] = rho_t[i-1] + delT * g_rho
-
-    rho_abs_t[i] = beta * rho_t[i]
-
-    # Temperature ETD for T' = a*n - b*(T-T0)
-    expoT = np.exp(-b_1_per_s * delT)
-    T[i] = T0 + expoT*(T[i-1]-T0) + (1.0-expoT)/b_1_per_s * (a_K_per_s_at_n1 * n_t[i-1])
-
-    # Net reactivity
-    rho_net_abs[i] = rho_abs_t[i] - alpha_T_abs_per_K * (T[i]-T0)
-
+    rho_t[i] = (rho_t[i-1]*ch) + rho_update_etd1(rho_t[i-1], times[i-1], delT, pos_t[i-1], v_rod, rho_max, H)*(ch - 1)/1.0
+    
+    rho_abs_t[i] = rho_t[i] * beta
     # sum lambda_i c_i
     sum_lambda_ci = float(np.sum(c_t[i-1, :] * lam_vec))
 
     # Neutron ETD for n' = Cn*n + sum(lambda c)
-    Cn = (rho_net_abs[i-1] - beta) / Lambda
+    Cn = (rho_abs_t[i-1] - beta) / Lambda
     z = delT * Cn
     expoN = np.exp(z)
     n_t[i] = n_t[i-1]*expoN + delT * phi1(z) * sum_lambda_ci
@@ -142,13 +126,11 @@ df_out = pd.DataFrame({
     "rod_position_m" : pos_t,
     "rod_position_%" : 100 * pos_t / H,
     "rho_dollar" : rho_t,
-    "rho_abs" : rho_abs_t,
-    "rho_net_abs" : rho_net_abs,
+    "rho_absolute_t" : rho_abs_t,
     "neutron_density_n" : n_t,
-    "temperature_K" : T
     })
 
-df_out.to_excel(f"hasil_simulasi_kartini_ETD1_h{dt}.xlsx", index=False)
+#df_out.to_excel(f"hasil_simulasi_kartini_ETD1_h{dt}.xlsx", index=False)
 
 plt.figure()
 plt.plot(times, rho_t)
@@ -158,26 +140,7 @@ plt.title("Reactivity vs Time")
 plt.grid()
 #plt.savefig(f"reactivityVsTime_ETD1_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
 plt.show()
-plt.figure()
 
-plt.plot(times, T)
-plt.xlabel("Time (s)")
-plt.ylabel("Fuel temperature T (K)")
-plt.title("Temperature vs Time")
-plt.grid(True)
-#plt.savefig(f"TemperatureVsTime_ETD1_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
-plt.show()
-
-plt.figure()
-plt.plot(times, rho_abs_t, label="rho_rod_abs")
-plt.plot(times, rho_net_abs, label="rho_net_abs (with feedback)")
-plt.xlabel("Time (s)")
-plt.ylabel("Reactivity (absolute)")
-plt.title("Rod vs Net Reactivity")
-plt.grid(True)
-plt.legend()
-#plt.savefig(f"ReactivityAllVsTime_ETD1_feedback_h{dt}.png", dpi=300, bbox_inches='tight')
-plt.show()
 
 
 plt.figure()
